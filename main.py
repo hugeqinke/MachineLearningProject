@@ -3,12 +3,20 @@ import os
 
 class Bill(object):
     # Takes in jstring
-    def __init__(self, jstr):
-        self.json_info = self.set_json(jstr)
+    def __init__(self, jstr, type):
+        if type == "JSON":
+            self.json_info = self.set_json(jstr)
+        elif type == "CSV":
+            pass 
+        attributes = []  # TODO: insert which things we want in the feature vector
 
     # Load the string (read from the file) into the json_info
     def set_json(self, s):
         return json.loads(s)
+
+    # Save selected attributes into a text file (preferrably in csv)
+    def serialize_attributes(self, path_file):
+        pass
 
 class Bills(object):
     def __init__(self):
@@ -21,8 +29,13 @@ class Reader(object):
         self.specifiers = ['hr'] # Any specific subdirectories (empty gets all subdirectories)
         self.data_directory = './congress/data'
 
-    # Read data from each congresses, given a text file with paths
-    def read_congresses(self, path_file):
+    # Read parsed data of congress, should be in csv format
+    def read_parsed_congresses(self, path_file):
+        bills_t = Bills()
+
+    # Read data from each congresses, given a text file with paths without any selelction\
+    # Reads JSON
+    def read_raw_congresses(self, path_file):
         bills_t = Bills()
         paths = [path.strip() for path in open(path_file, 'r').readlines()]
         for path in paths:
@@ -36,7 +49,7 @@ class Reader(object):
         serialize_file = open(target_file, "a") # append, don't overwrite!
         for congress in self.congresses:
             for specifier in self.specifiers:
-                # find and iterate througha ll directories
+                # find and iterate through all directories
                 directory = self.data_directory + "/" + str(congress) + "/bills/"
                 for subdir in os.listdir(directory):
                     if subdir == '.DS_Store':
@@ -47,7 +60,8 @@ class Reader(object):
                             continue
                         serialize_file.write(directory + subdir + "/" + bill_dir + "/data.json\n")
 
-class Algorithm(object):
+# Put pegasos and whatever in here
+class Algorithms(object):
     pass
 
 
@@ -56,5 +70,6 @@ if __name__ == "__main__":
     print("called")
     r = Reader()
     # r.serialize_paths("112json.txt")
-    bt = r.read_congresses("112json.txt")
-    print(bt.bills)
+    bt = r.read_raw_congresses("112json.txt")
+    for bill in bt.bills:
+        print(bill.json_info)
