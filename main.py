@@ -1,5 +1,8 @@
 import json
 import os
+import csv
+
+ATTRIBUTES = []
 
 class Bill(object):
     # Takes in jstring
@@ -7,17 +10,32 @@ class Bill(object):
         if type == "JSON":
             self.json_info = self.set_json(jstr)
         elif type == "CSV":
-            pass
-        attributes = []  # TODO: insert which things we want in the feature vector
+            pass 
+        self.attributes = [] 
 
     # Load the string (read from the file) into the json_info
     def set_json(self, s):
         return json.loads(s)
 
     # Save selected attributes into a text file (preferrably in csv)
-    def serialize_attributes(self, path_file):
-        pass
-
+    def serialize_attributes(self, csv_file):
+    	for attribute in ATTRIBUTES:
+		json_data = self.json_info
+		for path in attribute.split(","):
+			if json_data != None:
+				json_data = json_data[path]
+		if attribute == "amendments" or attribute == "actions" or attribute == "cosponsors": # Count amendments, actions and cosponsors
+			count = 0
+			for item in json_data:
+				count += 1	
+			json_data = count
+		if isinstance(json_data, basestring):
+			self.attributes.append(json_data.encode('utf-8').strip())
+		else:
+			self.attributes.append(json_data)
+	csv_file.writerow(self.attributes)
+	
+		
 class Bills(object):
     def __init__(self):
         self.bills = []
@@ -39,7 +57,7 @@ class Reader(object):
         bills_t = Bills()
         paths = [path.strip() for path in open(path_file, 'r').readlines()]
         for path in paths:
-            bill_t = Bill(open(path, 'r').read())
+            bill_t = Bill(open(path, 'r').read(), "JSON")
             bills_t.bills.append(bill_t)
         return bills_t
 
@@ -69,7 +87,10 @@ class Algorithms(object):
 if __name__ == "__main__":
     print("called")
     r = Reader()
+    csvfile = open("112data.csv", "wb")
+    w = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    ATTRIBUTES = [path.strip() for path in open("attributes.txt", "r").readlines()]
     # r.serialize_paths("112json.txt")
     bt = r.read_raw_congresses("112json.txt")
     for bill in bt.bills:
-        print(bill.json_info)
+        bill.serialize_attributes(w)
