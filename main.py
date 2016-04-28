@@ -7,7 +7,7 @@ class Bill(object):
         if type == "JSON":
             self.json_info = self.set_json(jstr)
         elif type == "CSV":
-            pass 
+            pass
         attributes = []  # TODO: insert which things we want in the feature vector
 
     # Load the string (read from the file) into the json_info
