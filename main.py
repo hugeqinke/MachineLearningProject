@@ -1,8 +1,18 @@
 import json
 import os
 import csv
+import urllib2
+
+from bs4 import BeautifulSoup
 
 ATTRIBUTES = []
+
+# A resource container for all the websites we want to use
+class Websites(object):
+    @staticmethod
+    def govtrack_congress_url(congress_n):
+        return "https://www.govtrack.us/api/v2/bill?congress=" + str(congress_n)
+
 
 class Bill(object):
     # Takes in jstring
@@ -24,7 +34,8 @@ class Bill(object):
 		for path in attribute.split(","):
 			if json_data != None:
 				json_data = json_data[path]
-		if attribute == "amendments" or attribute == "actions" or attribute == "cosponsors": # Count amendments, actions and cosponsors
+                # Count amendments, actions and cosponsors
+		if attribute == "amendments" or attribute == "actions" or attribute == "cosponsors": 
 			count = 0
 			for item in json_data:
 				count += 1	
@@ -39,7 +50,10 @@ class Bill(object):
 class Bills(object):
     def __init__(self):
         self.bills = []
-
+    
+    # Creates a mass of bills, but using mass input from the api scraper
+    def create_bills_json(json):
+       pass         
 
 class Reader(object):
     def __init__(self):
@@ -52,6 +66,7 @@ class Reader(object):
         bills_t = Bills()
 
     # Read data from each congresses, given a text file with paths without any selelction\
+    # Preferably, we want to use scrape_by_congress, but let's keep this hee for now
     # Reads JSON
     def read_raw_congresses(self, path_file):
         bills_t = Bills()
@@ -60,6 +75,22 @@ class Reader(object):
             bill_t = Bill(open(path, 'r').read(), "JSON")
             bills_t.bills.append(bill_t)
         return bills_t
+    
+    # This method sends a request to GovTrack and retrieves the json info
+    # @params:
+    # 1. congress_n: the number of congress that we want to get bils for
+    # 2. write: specifies whether or not we'd like to write our results to a document
+    def scrape_by_congress(self, congress_n, write):
+        url = Websites.govtrack_congress_url(congress_n) 
+        page = urllib2.urlopen(url)
+        soup = BeautifulSoup(page, "html.parser")
+    
+        if write:
+            f = open("./bills" + str(congress_n), "w+")
+            f.write(soup)
+            f.close()
+        
+        return soup
 
     # List all documents that we want to read and save them to a file,
     # so that we don't have to traverse the file system every time we run the program
@@ -85,12 +116,12 @@ class Algorithms(object):
 
 
 if __name__ == "__main__":
-    print("called")
     r = Reader()
-    csvfile = open("112data.csv", "wb")
-    w = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    ATTRIBUTES = [path.strip() for path in open("attributes.txt", "r").readlines()]
+    # csvfile = open("112data.csv", "wb")
+    # w = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    # ATTRIBUTES = [path.strip() for path in open("attributes.txt", "r").readlines()]
     # r.serialize_paths("112json.txt")
-    bt = r.read_raw_congresses("112json.txt")
-    for bill in bt.bills:
-        bill.serialize_attributes(w)
+    # bt = r.read_raw_congresses("112json.txt")
+    # for bill in bt.bills:
+    #    bill.serialize_attributes(w)
+    r.scrape_by_congress(112, True)
