@@ -3,7 +3,6 @@ import os
 import csv
 import sys
 import urllib2
-import StringIO
 
 from bs4 import BeautifulSoup
 
@@ -29,33 +28,30 @@ class Bill(object):
     def set_json(self, s):
         return json.loads(s)
 
-    # Save selected attributes into a text file (preferrably in csv)
+     # Save selected attributes into a text file (preferrably in csv)
     def serialize_attributes(self, csv_file):
-    	for attribute in ATTRIBUTES:
-		json_data = self.json_info
-		for path in attribute.split(","):
-			if json_data != None:
-				json_data = json_data[path]
-                # Count amendments, actions and cosponsors
-		if attribute == "amendments" or attribute == "actions" or attribute == "cosponsors":
-			count = 0
-			for item in json_data:
-				count += 1
-			json_data = count
-		if isinstance(json_data, basestring):
-			self.attributes.append(json_data.encode('utf-8').strip())
-		else:
-			self.attributes.append(json_data)
-	csv_file.writerow(self.attributes)
-	
-		
+        for attribute in ATTRIBUTES:
+            json_data = self.json_info
+            for path in attribute.split(","):
+                if json_data != None:
+                    json_data = json_data[path]
+                    # Count amendments, actions and cosponsors
+            if attribute == "amendments" or attribute == "actions" or attribute == "cosponsors":
+                count = 0
+                for item in json_data:
+                    count += 1
+                json_data = count
+            if isinstance(json_data, basestring):
+                self.attributes.append(json_data.encode('utf-8').strip())
+            else:
+                self.attributes.append(json_data)
+        csv_file.writerow(self.attributes)
+
+
 class Bills(object):
     def __init__(self):
         self.bills = []
-    
-    # Creates a mass of bills, but using mass input from the api scraper
-    def create_bills_json(json):
-       pass         
+
 
 class Reader(object):
     def __init__(self):
@@ -136,7 +132,7 @@ if __name__ == "__main__":
             print("Usage: python main.py scrape [file with congress numbers and write/not write]")
 
         if len(sys.argv) == 2:
-            congress_rules = "./bills/congress-rules.txt"
+            congress_rules = "./metadata/congress-rules.txt"
         else:
             congress_rules = sys.argv[2]
 
