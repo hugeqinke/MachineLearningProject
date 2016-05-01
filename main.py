@@ -12,7 +12,17 @@ ATTRIBUTES = []
 class Websites(object):
     @staticmethod
     def govtrack_congress_url(congress_n):
-        return "https://www.govtrack.us/api/v2/bill?congress=" + str(congress_n)
+        combinations = []
+        # Operating under the assumption that all congresses have the same subcommits
+        # sub = ["hconres", "hjres", "hr", "hres", "s", "sconres", "sjres", "sres"]
+        sub = ["hconres"]
+        for s in sub:
+            combinations.append("https://www.govtrack.us/data/congress/" + str(congress_n) + "/bills/" + s + "/")
+        return combinations
+
+    @staticmethod
+    def govtrack_data(url, bill_id):
+        return url + bill_id + "data.json"
 
 
 class Bill(object):
@@ -49,9 +59,26 @@ class Bill(object):
 
 
 class Bills(object):
-    def __init__(self):
-        self.bills = []
+    def __init__(self, jstr, type):
+        self.bills = None
+        self.bills_j = None
+        if type == "JSON":
+            self.bills_j = self.set_json(jstr)
+            self.bills = self.read_bills()
 
+    def set_json(self, s):
+        return json.loads(s)
+
+    def read_bills(self):
+        output = []
+        if not self.bills_j:
+            print("Incorrect call order: bills_j contains no information")
+            return False
+        allBills = self.bills_j["bills"]
+        for b in allBills:
+            # NOTE: kind of circular, dumping b back into a string, but have to be consistent
+            output.append(Bill(json.dumps(b), "JSON"))
+        return output
 
 class Reader(object):
     def __init__(self):
@@ -61,18 +88,18 @@ class Reader(object):
 
     # Read parsed data of congress, should be in csv format
     def read_parsed_congresses(self, path_file):
-        bills_t = Bills()
+        pass
 
     # Read data from each congresses, given a text file with paths without any selelction\
-    # Preferably, we want to use scrape_by_congress, but let's keep this hee for now
+    # Preferably, we want to use scrape_by_congress, but let's keep this here for now
     # Reads JSON
     def read_raw_congresses(self, path_file):
-        bills_t = Bills()
+        bills_l = []
         paths = [path.strip() for path in open(path_file, 'r').readlines()]
         for path in paths:
-            bill_t = Bill(open(path, 'r').read(), "JSON")
-            bills_t.bills.append(bill_t)
-        return bills_t
+            congress_bills = Bills(open(path, 'r').read(), "JSON")
+            bills_l.append(congress_bills)
+        return bills_l
 
 
     # This method sends a request to GovTrack and retrieves the json info
@@ -80,14 +107,35 @@ class Reader(object):
     # 1. congress_n: the number of congress that we want to get bils for
     # 2. write: specifies whether or not we'd like to write our results to a document
     def scrape_by_congress(self, congress_n, write):
-        url = Websites.govtrack_congress_url(congress_n) 
-        page = urllib2.urlopen(url).read()
-        # Before the write, we need to remove the three line metadata
-        res = {"bills": json.loads(page)["objects"]}
+        urls = Websites.govtrack_congress_url(congress_n)
+        bills_l = []
+        count = 0
+        for url in urls:
+            if count > 3:
+                break
+            test = urllib2.urlopen(url)
+            soup = BeautifulSoup(test, "html.parser")
+            for billurl in soup.find_all("a"):
+                count += 1
+                if count > 3:
+                    break
+                if billurl.getText() == "../":
+                    continue
+                dataurl = Websites.govtrack_data(url, billurl.getText())
+                bills_l.append(urllib2.urlopen(dataurl).read())
+        bills_ls = ",".join(bills_l)
+        bills_ls = "[" + bills_ls + "]"
+        fjson = open("./metadata/json-files.txt", "a+")
+        # # # Before the write, we need to remove the three line metadata
+        # res = {"bills": json.loads(page)["objects"]}
+        # #
+        res = {"bills": json.loads(bills_ls)}
         if write:
             f = open("./bills/congress" + str(congress_n), "w+")
             f.write(json.dumps(res, ensure_ascii=True))
             f.close()
+            fjson.write("./bills/congress" + str(congress_n) + "\n")
+            fjson.close()
         return res
 
     # List all documents that we want to read and save them to a file,
@@ -154,11 +202,14 @@ if __name__ == "__main__":
         f.write(successes)
 
 
-    # csvfile = open("112data.csv", "wb")
-    # w = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    # ATTRIBUTES = [path.strip() for path in open("attributes.txt", "r").readlines()]
-    # r.serialize_paths("112json.txt")
-    # bt = r.read_raw_congresses("112json.txt")
-    # for bill in bt.bills:
-    #    bill.serialize_attributes(w)
-    # r.scrape_by_congress(112, True)
+    if cmd == "csv":
+        r = Reader()
+        all_bills = r.read_raw_congresses("./metadata/json-files.txt")
+        csvfile = open("112data.csv", "wb")
+        w = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        ATTRIBUTES = [path.strip() for path in open("./metadata/attributes.txt", "r").readlines()]
+        bt = r.read_raw_congresses("./metadata/json-files.txt")
+        for congress in all_bills:
+            for bill in congress.bills:
+               bill.serialize_attributes(w)
+
