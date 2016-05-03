@@ -5,6 +5,8 @@ import sys
 import numpy as np
 import time
 
+import sklearn
+
 ATTRIBUTES = []
 ATT_FILES = {}
 MIN_NUM = 25
@@ -142,11 +144,11 @@ class Writer(object):
         progress = 0.25
         w = csv.writer(self.bill_output, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         i = 1.0
-        total_bum = bt.total_num
+        # total_bum = bt.total_num
         for bill in bills:
-            if i / total_num >= progress:
-                print(str(progress * 100) + "% done...")
-                progress += 0.25
+            # if i / total_num >= progress:
+            #     print(str(progress * 100) + "% done...")
+            #     progress += 0.25
             w.writerow(bill.vector)
             i += 1
 
@@ -240,9 +242,32 @@ class CongressPathReader(Reader):
 
 # Put pegasos and whatever in here
 class Algorithms(object):
-    def decision_tree(self, fv):
-        pass
+    def compare(self, hyp_y, real_y):
+        if len(hyp_y) != len(real_y):
+            print("Invalid vector lengths")
 
+        errors = 0
+        for hyp, real in zip(hyp_y, real_y):
+            if hyp != real:
+                errors += 1
+        return errors
+
+class Perceptron(Algorithms):
+    def __init__(self, train_x, train_y, test_x, test_y):
+        self.train_x = train_x
+        self.train_y = train_y
+        self.test_x = test_x
+        self.test_y = test_y
+
+    def run(self):
+        estimator = sklearn.linear_model.perceptron(self.train_x, self.train_y)
+        hyp_y = estimator.predict(self.test_x)
+
+        errors = self.compare(hyp_y, self.test_y)
+        print("There were", errors, "using Perceptron")
+
+    def find_optimal_params(self):
+        pass
 
 # How to use scraping API:
 #   call python main.py scrape
@@ -272,9 +297,23 @@ if __name__ == "__main__":
             r = CongressBillReader(sys.argv[2], "csv")
             # Then run any algorithms here I guess, or call this from another function
 
+    if cmd == "decisiontree":
+        cbReader = CongressBillReader("112data.csv", "csv")
+        a = Algorithms()
+        a.perceptron(cbReader.bill_o)
+
+    if cmd == "perceptron":
+        cbReader = CongressBillReader("112data.csv", "csv")
+        a = Algorithms()
+        a.perceptron(cbReader.bill_o)
+
+    if cmd == "svm":
+        cbReader = CongressBillReader("112data.csv", "csv")
+        a = Algorithms()
+        a.pegasos(cbReader.bill_o)
+
     if cmd == "csvify":
-        print("called")
-        r = CongressBillReader("./metadata/json-files.txt", "json")
+        r = CongressBillReader("./metadata/datafiles.txt", "json")
         # Objects for csv file with data vectors
         csvfile = open("112data.csv", "w+")
         # Vocab file paths
@@ -292,11 +331,11 @@ if __name__ == "__main__":
         print("Vectorizing bills...")
         progress = 0.25
         i = 1.0
-        total_num = bt.total_num
+        # total_num = bt.total_num
         for bill in bt.bills:
-            if i / total_num >= progress:
-                print(str(progress * 100) + "% done...")
-                progress += 0.25
+            # if i / total_num >= progress:
+            #     print(str(progress * 100) + "% done...")
+            #     progress += 0.25
             bill.serialize_attributes(vocabs)
             i += 1
         # Write vectors to csv file

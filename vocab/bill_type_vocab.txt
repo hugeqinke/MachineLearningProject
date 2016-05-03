@@ -1,0 +1,2 @@
+sconres,0
+sjres,1
