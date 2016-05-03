@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
+<<<<<<< HEAD
     <list default="true" id="5b06302d-5f94-431b-a598-5a092505b89c" name="Default" comment="" />
+=======
+    <list default="true" id="5b06302d-5f94-431b-a598-5a092505b89c" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/superrsync.sh" afterPath="$PROJECT_DIR$/superrsync.sh" />
+    </list>
+>>>>>>> 9712cc8c4c315a2bc8e51dc6b54f3444fb08376a
     <ignored path="MLProject.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path=".idea/dataSources.local.xml" />
@@ -25,8 +32,13 @@
       <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state vertical-scroll-proportion="1.0">
               <caret line="121" column="10" selection-start-line="121" selection-start-column="10" selection-end-line="121" selection-end-column="10" />
+=======
+            <state vertical-scroll-proportion="0.2935943">
+              <caret line="11" column="35" selection-start-line="11" selection-start-column="35" selection-end-line="11" selection-end-column="35" />
+>>>>>>> 9712cc8c4c315a2bc8e51dc6b54f3444fb08376a
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -422,7 +434,11 @@
     <frame x="140" y="23" width="1226" height="680" extended-state="0" />
     <editor active="true" />
     <layout>
+<<<<<<< HEAD
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.28800675" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+=======
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2837838" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+>>>>>>> 9712cc8c4c315a2bc8e51dc6b54f3444fb08376a
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -467,6 +483,7 @@
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
+<<<<<<< HEAD
         </state>
       </provider>
     </entry>
@@ -477,13 +494,20 @@
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
+=======
+>>>>>>> 9712cc8c4c315a2bc8e51dc6b54f3444fb08376a
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
         <state vertical-scroll-proportion="1.0">
           <caret line="121" column="10" selection-start-line="121" selection-start-column="10" selection-end-line="121" selection-end-column="10" />
+=======
+        <state vertical-scroll-proportion="0.2935943">
+          <caret line="11" column="35" selection-start-line="11" selection-start-column="35" selection-end-line="11" selection-end-column="35" />
+>>>>>>> 9712cc8c4c315a2bc8e51dc6b54f3444fb08376a
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>

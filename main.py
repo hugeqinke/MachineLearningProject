@@ -22,7 +22,7 @@ class Bill(object):
             self.json_info = self.set_json(jstr)
         elif type.lower() == "csv":
             self.attributes = jstr.split()
-        self.vector = []
+	self.vector = []
 
     # Load the string (read from the file) into the json_info
     def set_json(self, s):
@@ -185,7 +185,7 @@ class CongressBillReader(Reader):
         self.readFile(pathFile)
         bs = Bills()
         for value in self.values:
-            value = value.strip()  # Get rid of annoying \n at the end
+            value = value.strip() # Get rid of annoying \n at the end
             with open(value, "r") as f:
                 json_content = ""
                 contents = json_content.join(f.readlines())
@@ -211,7 +211,6 @@ class CongressPathReader(Reader):
         self.BILL_DIR = billDirectoryPath
         # need this to write results
         self.writer = Writer("", "")
-
         self.paths = None
 
     # Reads the paths and notify the metadata file congress-status that things have been changed
@@ -262,13 +261,11 @@ class Perceptron(Algorithms):
     def run(self):
         estimator = sklearn.linear_model.perceptron(self.train_x, self.train_y)
         hyp_y = estimator.predict(self.test_x)
-
         errors = self.compare(hyp_y, self.test_y)
         print("There were", errors, "using Perceptron")
 
     def find_optimal_params(self):
         pass
-
 # How to use scraping API:
 #   call python main.py scrape
 #   [optional argument after scrape indicating file with desired congress numbers]
