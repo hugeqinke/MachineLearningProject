@@ -3,7 +3,6 @@ import os
 import csv
 import sys
 
-
 from bs4 import BeautifulSoup
 
 ATTRIBUTES = []
@@ -166,14 +165,13 @@ if __name__ == "__main__":
         else:
             cpReader = CongressPathReader("./metadata/congress-status.txt", sys.argv[2])
             cpReader.readPaths()
-    
+
     if cmd == "csvread":
         if len(sys.argv) != 3:
             print("usage: python main.py csvread congresscsvfile")
         else:
             r = CongressBillReader(sys.argv[2], "csv")
             # Then run any algorithms here I guess, or call this from another function
-
 
     if cmd == "csvify":
         csvfile = open("./metadata/112data.csv", "wb")
