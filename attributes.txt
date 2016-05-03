@@ -1,0 +1,16 @@
+bill_id
+bill_type
+congress
+introduced_at
+official_title
+popular_title
+short_title
+summary,text
+subjects
+sponsor,district
+sponsor,state
+sponsor,thomas_id
+amendments
+actions
+cosponsors
+committees
