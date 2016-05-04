@@ -6,11 +6,10 @@ introduced_at
 official_title
 popular_title
 short_title
-summary,text
 subjects
 sponsor,district
 sponsor,state
-sponsor,name
+sponsor,thomas_id
 amendments
 actions
 cosponsors

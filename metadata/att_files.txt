@@ -1,0 +1,7 @@
+bill_type|./vocab/bill_type_vocab.csv
+official_title|./vocab/official_title_vocab.csv
+popular_title|./vocab/popular_title_vocab.csv
+short_title|./vocab/short_title_vocab.csv
+subjects|./vocab/subjects_vocab.csv
+sponsor,state|./vocab/sponsor_state_vocab.csv
+committees|./vocab/committees_vocab.csv

@@ -4,25 +4,28 @@ import csv
 import sys
 import numpy as np
 import time
+from nltk.stem import *
 
-import sklearn
+#import sklearn
 
 ATTRIBUTES = []
 ATT_FILES = {}
-MIN_NUM = 25
-MAX_NUM = 200
+MIN_NUM = 50
+MAX_NUM = 2000
+
 
 class Bill(object):
     # Takes in jstring
     def __init__(self, jstr, type):
-        self.id = ""
+        self.bill_id = ""
         self.attributes = None
         self.label = None
         self.vector = []
         if type.lower() == "json":
             self.json_info = self.set_json(jstr)
         elif type.lower() == "csv":
-            self.attributes = jstr.split(",")
+            self.attributes = jstr.split()
+        self.vector = []
 
     # Load the string (read from the file) into the json_info
     def set_json(self, s):
@@ -31,9 +34,11 @@ class Bill(object):
 
     # Save selected attributes and final vector
     def serialize_attributes(self, vocabs):
+        nlp = LancasterStemmer()
         vector = np.zeros((1, 1))
         data_array = np.zeros((1, 1))
         for attribute in ATTRIBUTES:
+            # Get data
             data = self.json_info
             for path in attribute.split(","):
                 if data != None:
@@ -42,7 +47,7 @@ class Bill(object):
                 data = len(data)
                 data_array[0] = data
                 vector = np.concatenate((vector, data_array))
-            elif vocabs.has_key(attribute):
+            elif vocabs.has_key(attribute): # Bag of words attributes
                 vocab = vocabs[attribute]
                 lil_vec = np.zeros([len(vocab), 1])
                 if data != None:
@@ -50,7 +55,7 @@ class Bill(object):
                         data = str(data.strip().encode('utf8', 'ignore')).translate(None, "\"\',.;:/?[]{}\()&%$!")
                         data = data.replace("\n", " ")
                         for word in data.strip().split(" "):
-                            word = word.lower()
+                            word = nlp.stem(word.lower())
                             if word in vocab:
                                 lil_vec[vocab[word]] += 1
                     else:
@@ -60,12 +65,18 @@ class Bill(object):
                                     lil_vec[vocab[item["committee_id"]]] = 1
                             else:
                                 for word in item.split(" "):
-                                    word = word.strip(" \"\',.;:/?'[]{}\()&%$!").lower()
+                                    word = nlp.stem(word.strip(" \"\',.;:/?'[]{}\()&%$!").lower())
                                     if word in vocab:
                                         lil_vec[vocab[word]] += 1
                 vector = np.concatenate((vector, lil_vec))
             elif attribute == "bill_id":
-                self.id = data
+                self.bill_id = data
+            elif attribute == "history,enacted":
+                if data:
+                    data_array[0] = 1
+                else:
+                    data_array[0] = 0
+                vector = np.concatenate((vector, data_array))
             elif attribute == "introduced_at":
                 pattern = "%Y-%m-%d"
                 data_array[0] = int(time.mktime(time.strptime(data, pattern)))
@@ -73,7 +84,7 @@ class Bill(object):
             else:
                 data_array[0] = data
                 vector = np.concatenate((vector, data_array))
-        self.vector = vector.flat[:]
+        self.vector = vector.flat[1:]
 
 
 class Bills(object):
@@ -88,57 +99,6 @@ class Writer(object):
         self.bill_output = output
         self.qualifier = "w"
 
-    # Attribute is a string, bills is an array of bills
-    def bag_of_words(self, attribute, bills):
-        print("Creating vocabulary for " + attribute + "...")
-
-        if attribute != "subjects" and attribute != "committees":
-            vocab = {}
-            for bill in bills:
-                line = bill.json_info
-                for path in attribute.split(","):
-                    if line != None:
-                        line = line[path]
-                if line != None:
-                    line = str(line.strip().encode('utf8', 'ignore')).translate(None, "\"\',.;:/?[]{}\()&%$!")
-                    line = line.replace("\n", " ")
-                    for word in line.strip().split(" "):
-                        word = word.lower()
-                        if word not in vocab:
-                            vocab[word] = 1
-                        else:
-                            vocab[word] += 1
-        else:
-            vocab = {}
-            for bill in bills:
-                for item in bill.json_info[attribute]:
-                    if attribute == "committees":
-                        word = item["committee_id"]
-                        if word not in vocab:
-                            vocab[word] = 1
-                        else:
-                            vocab[word] += 1
-
-                    else:
-                        for word in item.split(" "):
-                            word = word.strip(" \"\',.;:/?'[]{}\()&%$!").lower()
-                            if word not in vocab:
-                                vocab[word] = 1
-                            else:
-                                vocab[word] += 1
-        if vocab.has_key(""):
-            del vocab[""]
-        new_vocab = {}
-        i = 0
-        for word in vocab:
-            if vocab[word] > MIN_NUM and vocab[word] < MAX_NUM:
-                new_vocab[word] = i
-                i += 1
-        w = csv.writer(self.file_dict[attribute], delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        for key, value in new_vocab.items():
-            w.writerow([key, value])
-        self.file_dict[attribute].close()
-        return new_vocab
 
     def save_vectors(self, bt):
         bills = bt.bills
@@ -161,16 +121,58 @@ class Writer(object):
         f = open(path, self.qualifier)
         f.writelines(values)
 
+    # Attribute is a string, bills is an array of bills
+    def bag_of_words(self, attribute, bills):
+        print("Creating vocabulary for " + attribute + "...")
+        nlp = LancasterStemmer()
 
-class Reader(object):
-    def __init__(self):
-        # I guess values would only work for one path, then...
-        self.values = None
+        if attribute != "subjects" and attribute != "committees":
+            vocab = {}
+            for bill in bills:
+                line = bill.json_info
+                for path in attribute.split(","):
+                    if line != None:
+                        line = line[path]
+                if line != None:
+                    line = str(line.strip().encode('utf8', 'ignore')).translate(None, "\"\',.;:/?[]{}\()&%$!")
+                    line = line.replace("\n", " ")
+                    for word in line.strip().split(" "):
+                        word = nlp.stem(word.lower())
+                        if word not in vocab:
+                            vocab[word] = 1
+                        else:
+                            vocab[word] += 1
+        else:
+            vocab = {}
+            for bill in bills:
+                for item in bill.json_info[attribute]:
+                    if attribute == "committees":
+                        word = item["committee_id"]
+                        if word not in vocab:
+                            vocab[word] = 1
+                        else:
+                            vocab[word] += 1
 
-    def readFile(self, doc):
-        with open(doc, 'r') as f:
-            self.values = f.readlines()
-
+                    else:
+                        for word in item.split(" "):
+                            word = nlp.stem(word.strip(" \"\',.;:/?'[]{}\()&%$!").lower())
+                            if word not in vocab:
+                                vocab[word] = 1
+                            else:
+                                vocab[word] += 1
+        if vocab.has_key(""):
+            del vocab[""]
+        new_vocab = {}
+        i = 0
+        for word in vocab:
+            if vocab[word] > MIN_NUM and vocab[word] < MAX_NUM and not word.isdigit():
+                new_vocab[word] = i
+                i += 1
+        w = csv.writer(self.file_dict[attribute], delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for key, value in new_vocab.items():
+            w.writerow([key, value])
+        self.file_dict[attribute].close()
+        return new_vocab
 
 # Read the CSV files
 # Use this only after all the feature vectors have been succesfully parsed and stuff
@@ -218,7 +220,29 @@ class VectorReader(Reader):
     def removeAttribute(self, b):
         b.attributes = None
 
+    def save_vectors(self, bt, bill_output):
+        bills = bt.bills
+        progress = 0.25
+        w = csv.writer(bill_output, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        i = 1.0
+        total_bum = bt.total_num
+        for bill in bills:
+            if i / total_num >= progress:
+                 print(str(progress * 100) + "% done...")
+                 progress += 0.25
+      	    w.writerow(bill.vector)
+            i += 1
 
+
+
+class Reader(object):
+    def __init__(self):
+        # I guess values would only work for one path, then...
+        self.values = None
+
+    def readFile(self, doc):
+        with open(doc, 'r') as f:
+            self.values = f.readlines()
 
 
 class CongressBillReader(Reader):
@@ -235,12 +259,13 @@ class CongressBillReader(Reader):
         self.readFile(pathFile)
         bs = Bills()
         for value in self.values:
-            value = value.strip() # Get rid of annoying \n at the end
+            value = value.strip()  # Get rid of annoying \n at the end
             with open(value, "r") as f:
                 json_content = ""
                 contents = json_content.join(f.readlines())
                 b = Bill(contents, "JSON")
                 bs.bills.append(b)
+        bs.total_num = len(bs.bills)
         return bs
 
     def readBillFilesCSV(self, pathFile):
@@ -250,6 +275,7 @@ class CongressBillReader(Reader):
             value = value.strip()
             b = Bill(value, "CSV")
             bs.bills.append(b)
+        bs.total_num = len(bs.bills)
         return bs
 
 
@@ -317,32 +343,44 @@ if __name__ == "__main__":
             r = CongressBillReader(sys.argv[2], "csv")
             # Then run any algorithms here I guess, or call this from another function
 
-    if cmd == "csvify":
+    if cmd == "vocab":
+        print("Loading bill data...")
         r = CongressBillReader("./metadata/datafiles.txt", "json")
-        # Objects for csv file with data vectors
-        csvfile = open("112data.csv", "w+")
         # Vocab file paths
-        ATTRIBUTES = [path.strip() for path in open("attributes.txt", "r").readlines()]
-        for line in open("att_files.txt", "r").readlines():  # Load in vocab file locations
+        ATTRIBUTES = [path.strip() for path in open("./metadata/attributes.txt", "r").readlines()]
+        for line in open("./metadata/att_files.txt", "r").readlines():  # Load in vocab file locations
             line = line.strip().split("|")
             ATT_FILES[line[0]] = open(line[1], "w")
-        vec_writer = Writer(ATT_FILES, csvfile)
-        # r.serialize_paths("112json.txt")
-        print("Loading bill data...")
+        vec_writer = Writer(ATT_FILES)
         bt = r.bill_o
-        vocabs = {}
         for att in ATT_FILES.keys():
-            vocabs[att] = vec_writer.bag_of_words(att, bt.bills)
+            vec_writer.bag_of_words(att, bt.bills)
+
+    if cmd == "csvify":
+        print("Loading bill data...")
+        r = CongressBillReader("./metadata/datafiles.txt", "json")
+        csvfile = open("../data/vectors.csv", "w+")
+        vocabs = {}
+        ATTRIBUTES = [path.strip() for path in open("./metadata/attributes.txt", "r").readlines()]
+        vec_writer = Writer(ATT_FILES)
+        for line in open("./metadata/att_files.txt", "r").readlines():  # Load in vocab file locations
+            line = line.strip().split("|")
+            reader = csv.reader(open(line[1], "r"), delimiter=',')
+            vocabs[line[0]] = {}
+            for row in reader:
+                k,v = row
+                vocabs[line[0]][k] = int(v)
         print("Vectorizing bills...")
+        bt = r.bill_o
         progress = 0.25
         i = 1.0
         # total_num = bt.total_num
         for bill in bt.bills:
-            # if i / total_num >= progress:
-            #     print(str(progress * 100) + "% done...")
-            #     progress += 0.25
+            if i / total_num >= progress:
+               print(str(progress * 100) + "% done...")
+               progress += 0.25
             bill.serialize_attributes(vocabs)
             i += 1
         # Write vectors to csv file
         print("Saving bills to file...")
-        vec_writer.save_vectors(bt)
+        vec_writer.save_vectors(bt, csvfile)
