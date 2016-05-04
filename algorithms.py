@@ -1,6 +1,8 @@
 import sklearn
 import sys
 
+import random
+
 import main as Main
 
 from sklearn.linear_model import SGDClassifier
@@ -23,6 +25,19 @@ class SupervisedAlgorithms(object):
                 errors += 1
         return errors
 
+
+class RandomForest(SupervisedAlgorithms):
+    def __init__(self, train_x, train_y, test_x, test_y):
+        super(RandomForest, self).__init__(train_x, train_y, test_x, test_y)
+
+    def run(self, args={}):
+        from sklearn import ensemble
+        rfc = ensemble.RandomForestClassifier(**args)
+        rfc.fit(self.train_x, self.train_y)
+        hpy_y = rfc.predict(self.test_x)
+        errors = self.compare(hpy_y, self.test_y)
+
+        print "There were", errors, "errors using random forests"
 
 class Perceptron(SupervisedAlgorithms):
     def __init__(self, train_x, train_y, test_x, test_y):
@@ -65,27 +80,45 @@ class DecisionTree(SupervisedAlgorithms):
     def __init__(self, train_x, train_y, test_x, test_y):
         super(DecisionTree, self).__init__(train_x, train_y, test_x, test_y)
 
-    def run(self, args=None):
+    def run(self, args={}):
         from sklearn import tree
         # First, parse any specified arguments
-        if args is not None:
-            dt_args = dict(tuple(e.split('=')) for e in args.split(','))
         # Then, pass the arguments into the decision tree
-        clf = tree.DecisionTreeClassifier()
+        clf = tree.DecisionTreeClassifier(**args)
         clf = clf.fit(self.train_x, self.train_y)
         hyp_y = clf.predict(self.test_x)
         errors = self.compare(hyp_y, self.test_y)
-        print("There were", errors, "errors using decision trees")
 
+        with  open("./dt_results.txt", "a") as f:
+            writeL = ""
+            if "max_depth" in args:
+                writeL += "max_depth: " + str(args["max_depth"]) + " "
+            if "min_samples_leaf" in args:
+                writeL += "min_samples_leaf: " + str(args["min_samples_leaf"]) + " "
+            writeL += "errors: " + str(errors) + " "
+            writeL += "percent: " + str(float(errors)/len(self.test_y)) + "\n"
+            f.write(writeL)
+
+    def find_optimal(self):
+        mds = range(1, 35)
+        mls = range(1, 35)
+        count = 0
+        percent = 0.25
+        for md in mds:
+            if count/(35*35) >= 0.25:
+                percent += 0.25
+                print "Done", percent, "percent left"
+            for ml in mls:
+                count += 1
+                self.run({'max_depth': md, 'min_samples_leaf':ml})
 
 class DataDivider(object):
     # Doesn't have test_n yet...allocate that separately
     # Splits training data and validation data into two categories
     def __init__(self, bls, ratio):
-        # train_n = int(len(bls.bills) * ratio)
-        # validate_n = len(bls.bills) - train_n
-        train_n = 1
-        validate_n = train_n + 200
+        random.shuffle(bls.bills)
+        train_n = int(len(bls.bills) * ratio)
+        validate_n = len(bls.bills)
         self.train = bls.bills[:train_n]
         self.validate = bls.bills[train_n:validate_n]
 
@@ -99,7 +132,13 @@ class DataDivider(object):
 
 
     def listifyTrain(self):
+        print("Transforming training data into a list...")
+        progress = 0.25
+        count = 0
         for t in self.train:
+            if count / len(self.train) >= progress:
+                progress += 0.25
+                print "Completed", progress * 100, "percent"
             if t.vector is None or t.label is None:
                     print("Invalid bill")
                     exit()
@@ -109,12 +148,18 @@ class DataDivider(object):
                     t.vector[i] = int(float(val.strip()))
                 else:
                     t.vector[i] = 0
-
             self.train_x.append(t.vector)
             self.train_y.append(t.label)  # Make sure that t.label isn't null
+            count += 1
 
     def listifyValidate(self):
-         for t in self.validate:
+        print("Transforming validation data into a list...")
+        progress = 0.25
+        count = 0
+        for t in self.validate:
+            if count / len(self.validate) >= progress:
+                progress += 0.25
+                print "Completed", progress * 100, "percent"
             if t.vector is None or t.label is None:
                     print("Invalid bill")
                     exit()
@@ -124,9 +169,9 @@ class DataDivider(object):
                     t.vector[i] = int(float(val.strip()))
                 else:
                     t.vector[i] = 0
-
             self.validate_x.append(t.vector)
             self.validate_y.append(t.label)  # Make sure that t.label isn't null
+            count += 1
 
     # def fillMissing(self):
     #     from scipy import stats
@@ -138,16 +183,9 @@ class DataDivider(object):
     #     # print("Done computing modes...")
 
 
-
-
-
-    def returnData(self):
-        return self.train, self.validate
-
-
 if __name__ == "__main__":
     path = "/Users/TYang/Desktop/vectors.csv"
-    if len(sys.argv) !=2:
+    if len(sys.argv) < 2:
         print("usage: python algorithms.py algname")
         exit(1)
 
@@ -167,7 +205,12 @@ if __name__ == "__main__":
     if sys.argv[1] == "decision_trees":
         print("Running decision trees")
         dt = DecisionTree(dd.train_x, dd.train_y, dd.validate_x, dd.validate_y)
-        dt.run()
+        if len(sys.argv) == 3 and sys.argv[2] == "opt":
+            dt.find_optimal()
+        else:
+            dt.run()
 
     if sys.argv[1] == "random_forests":
-        pass
+        print("Running random forests")
+        rf = RandomForest(dd.train_x, dd.train_y, dd.validate_x, dd.validate_y)
+        rf.run()
