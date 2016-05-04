@@ -178,19 +178,16 @@ class VectorReader(Reader):
     def __init__(self):
         super(VectorReader, self).__init__()
 
-    def readFinalVector(self, pathFile):
+    def readFinalVector(self, vectorFile):
         bls = Bills()
-        self.readFile(pathFile)  # Read the csv file
-        for file in self.values:
-            with open(file, "r") as f:
-                contents = f.readlines()
-                for content in contents:
-                    b = Bill(content, "csv")
-                    self.readID(b)
-                    self.readLabel(b)  # Next, from the file, read the labels
-                    self.readFV(b)  # And finally, read all the attributes
-                    self.removeAttribute(b)
-                    bls.bills.append(b)
+        self.readFile(vectorFile)  # Read the csv file
+        for line in self.values:
+            b = Bill(line, "csv")
+            self.readID(b)
+            self.readLabel(b)  # Next, from the file, read the labels
+            self.readFV(b)  # And finally, read all the attributes
+            self.removeAttribute(b)
+            bls.bills.append(b)
         return bls
 
     # We will use this to write to somewhere else
