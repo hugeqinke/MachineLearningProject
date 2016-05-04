@@ -1,4 +1,5 @@
 bill_id
+history,enacted
 bill_type
 congress
 introduced_at

@@ -12,21 +12,22 @@ ATT_FILES = {}
 MIN_NUM = 25
 MAX_NUM = 200
 
-
 class Bill(object):
     # Takes in jstring
     def __init__(self, jstr, type):
         self.id = ""
         self.attributes = None
+        self.label = None
+        self.vector = []
         if type.lower() == "json":
             self.json_info = self.set_json(jstr)
         elif type.lower() == "csv":
-            self.attributes = jstr.split()
-	self.vector = []
+            self.attributes = jstr.split(",")
 
     # Load the string (read from the file) into the json_info
     def set_json(self, s):
         return json.loads(s)
+
 
     # Save selected attributes and final vector
     def serialize_attributes(self, vocabs):
@@ -170,6 +171,57 @@ class Reader(object):
         with open(doc, 'r') as f:
             self.values = f.readlines()
 
+# Read the CSV files
+# Use this only after all the feature vectors have been succesfully parsed and stuff
+class VectorReader(Reader):
+    def __init__(self):
+        super(VectorReader, self).__init__()
+
+    def readFinalVector(self, pathFile):
+        bls = Bills()
+        self.readFile(pathFile)  # Read the csv file
+        for file in self.values:
+            with open(file, "r") as f:
+                contents = f.readlines()
+                for content in contents:
+                    b = Bill(content, "csv")
+                    self.readID(b)
+                    self.readLabel(b)  # Next, from the file, read the labels
+                    self.readFV(b)  # And finally, read all the attributes
+                    self.removeAttribute(b)
+                    bls.bills.append(b)
+        return bls
+
+    # We will use this to write to somewhere else
+    def readRawVector(self, pathFile):
+        # Use neatifying algorithm here
+        bls = Bills()
+        self.readFile(pathFile)
+        for file in self.values:
+            with open(file, "r") as f:
+                contents = f.readlines()
+                for content in contents:
+                    b = Bill(content, "csv")
+                    self.readID(b)
+                    self.readLabel(b)
+                    self.readFV(b)
+                    # Apply algorithm change here
+        pass
+
+    def readID(self, b):
+        b.id = b.attributes[0]
+
+    def readLabel(self, b):
+        b.label = b.attributes[1]
+
+    def readFV(self, b):
+        b.vector = b.attributes[2:]
+
+    def removeAttribute(self, b):
+        b.attributes = None
+
+
+
 
 class CongressBillReader(Reader):
     def __init__(self, pathFile, requestType):
@@ -239,33 +291,6 @@ class CongressPathReader(Reader):
         self.writer.writeValues("./metadata/datafiles.txt", True, pathList)
 
 
-# Put pegasos and whatever in here
-class Algorithms(object):
-    def compare(self, hyp_y, real_y):
-        if len(hyp_y) != len(real_y):
-            print("Invalid vector lengths")
-
-        errors = 0
-        for hyp, real in zip(hyp_y, real_y):
-            if hyp != real:
-                errors += 1
-        return errors
-
-class Perceptron(Algorithms):
-    def __init__(self, train_x, train_y, test_x, test_y):
-        self.train_x = train_x
-        self.train_y = train_y
-        self.test_x = test_x
-        self.test_y = test_y
-
-    def run(self):
-        estimator = sklearn.linear_model.perceptron(self.train_x, self.train_y)
-        hyp_y = estimator.predict(self.test_x)
-        errors = self.compare(hyp_y, self.test_y)
-        print("There were", errors, "using Perceptron")
-
-    def find_optimal_params(self):
-        pass
 # How to use scraping API:
 #   call python main.py scrape
 #   [optional argument after scrape indicating file with desired congress numbers]
@@ -294,20 +319,6 @@ if __name__ == "__main__":
             r = CongressBillReader(sys.argv[2], "csv")
             # Then run any algorithms here I guess, or call this from another function
 
-    if cmd == "decisiontree":
-        cbReader = CongressBillReader("112data.csv", "csv")
-        a = Algorithms()
-        a.perceptron(cbReader.bill_o)
-
-    if cmd == "perceptron":
-        cbReader = CongressBillReader("112data.csv", "csv")
-        a = Algorithms()
-        a.perceptron(cbReader.bill_o)
-
-    if cmd == "svm":
-        cbReader = CongressBillReader("112data.csv", "csv")
-        a = Algorithms()
-        a.pegasos(cbReader.bill_o)
 
     if cmd == "csvify":
         r = CongressBillReader("./metadata/datafiles.txt", "json")
