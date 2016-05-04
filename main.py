@@ -171,6 +171,7 @@ class Reader(object):
         with open(doc, 'r') as f:
             self.values = f.readlines()
 
+
 # Read the CSV files
 # Use this only after all the feature vectors have been succesfully parsed and stuff
 class VectorReader(Reader):
@@ -318,7 +319,6 @@ if __name__ == "__main__":
         else:
             r = CongressBillReader(sys.argv[2], "csv")
             # Then run any algorithms here I guess, or call this from another function
-
 
     if cmd == "csvify":
         r = CongressBillReader("./metadata/datafiles.txt", "json")
