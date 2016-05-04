@@ -65,10 +65,11 @@ class DecisionTree(SupervisedAlgorithms):
     def __init__(self, train_x, train_y, test_x, test_y):
         super(DecisionTree, self).__init__(train_x, train_y, test_x, test_y)
 
-    def run(self, args):
+    def run(self, args=None):
         from sklearn import tree
         # First, parse any specified arguments
-        dt_args = dict(tuple(e.split('=')) for e in args.split(','))
+        if args is not None:
+            dt_args = dict(tuple(e.split('=')) for e in args.split(','))
         # Then, pass the arguments into the decision tree
         clf = tree.DecisionTreeClassifier(**dt_args)
         clf = clf.fit(self.train_x, self.train_y)
@@ -132,6 +133,6 @@ if __name__ == "__main__":
     if sys.argv[2] == "decision_trees":
         dt = DecisionTree(train_x, train_y, validate_x, validate_y)
         dt.run()
-        
+
     if sys.argv[2] == "random_forests":
         pass
